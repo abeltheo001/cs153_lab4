@@ -30,7 +30,6 @@ void shminit() {
 
 int shm_open(int id, char **pointer) {
   int i = 0;
-  int found = 0;
 
   // case 1
   acquire(&(shm_table.lock));
@@ -67,6 +66,7 @@ int shm_open(int id, char **pointer) {
 
 int shm_close(int id) {
 //Lab 4
+int i;
 
 initlock(&(shm_table.lock), "SHM lock");
 acquire(&(shm_table.lock));
@@ -79,14 +79,14 @@ if (id <= 0) {
 //iterate through pages for id, if a match is found and is greater than 0,
 //decrement the ref count. if the refcount is now or was already zero, 
 //turn the accompanying frame and id of the page to 0 to clear it.
-for (int i = 0; i < 64, i++) {
+for (i = 0; i < 64; i++) {
 	if (shm_table.shm_pages[i].id == id) {	
 		if (shm_table.shm_pages[i].refcnt > 0)
 			shm_table.shm_pages[i].refcnt--;
 
 		if (shm_table.shm_pages[i].refcnt == 0) {
-			shm_table.shm_pages[i].id == 0;
-			shm_table.shm_pages[i].frame == 0;
+			shm_table.shm_pages[i].id = 0;
+			shm_table.shm_pages[i].frame = 0;
 						
 		}
 
