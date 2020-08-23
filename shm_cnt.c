@@ -13,13 +13,8 @@ int main(int argc, char *argv[])
 	int pid;
 	int i=0;
 	struct shm_cnt *counter;
-	
-	printf(1,"Level one: pre-fork check\n");
-
   	pid=fork();
   	sleep(1);
-	
-	printf(1, "Level two: post-fork check\n");
 	
 	//shm_open: first process will create the page, the second will just attach to the same page
 	//we get the virtual address of the page returned into counter
@@ -27,24 +22,16 @@ int main(int argc, char *argv[])
   
 	shm_open(1,(char **)&counter);
 	
-	printf(1, "Level three: post-shm_open\n");
- 
- 	printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
+ //	printf(1,"%s returned successfully from shm_open with counter %x\n", pid? "Child": "Parent", counter); 
   	for(i = 0; i < 10000; i++)
     	{	
-		printf(1, "position %d currently\n", i);
-     		uacquire(&(counter->lock));
-     		printf(1, "uacquire check\n");
+  		uacquire(&(counter->lock));
 		counter->cnt++;
-		printf(1, "current count: %d\n", counter->cnt);
      		urelease(&(counter->lock));
-		printf(1, "urelease check\n");
 
      		if(i%1000 == 0)
        			printf(1,"Counter in %s is %d at address %x\n",pid? "Parent" : "Child", counter->cnt, counter);
 	}
-  
-	printf(1, "Level four: pre-pid check\n");
   	
 	if(pid)
      	{
@@ -56,8 +43,6 @@ int main(int argc, char *argv[])
   
 	//shm_close: first process will just detach, next one will free up the shm_table entry (but for now not the page)
   	 shm_close(1);
-
-   	printf(1, "Level five: post-shm_close\n");
    exit();
    return 0;
 }
