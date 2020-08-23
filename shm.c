@@ -40,10 +40,35 @@ return 0; //added to remove compiler warning -- you should decide what to return
 
 
 int shm_close(int id) {
-//you write this too!
+//Lab 4
 
+initlock(&(shm_table.lock), "SHM lock");
+acquire(&(shm_table.lock));
 
+//check if user input a zero or negative by mistake
+if (id <= 0) {
+	return 0;
+}
 
+//iterate through pages for id, if a match is found and is greater than 0,
+//decrement the ref count. if the refcount is now or was already zero, 
+//turn the accompanying frame and id of the page to 0 to clear it.
+for (int i = 0; i < 64, i++) {
+	if (shm_table.shm_pages[i].id == id) {	
+		if (shm_table.shm_pages[i].refcnt > 0)
+			shm_table.shm_pages[i].refcnt--;
 
-return 0; //added to remove compiler warning -- you should decide what to return
+		if (shm_table.shm_pages[i].refcnt == 0) {
+			shm_table.shm_pages[i].id == 0;
+			shm_table.shm_pages[i].frame == 0;
+						
+		}
+
+	}
+
+}
+
+release(&(shm_table.lock));
+return 0;
+
 }
