@@ -14893,128 +14893,130 @@ int shm_open(int id, char **pointer) {
 80106d18:	83 c0 01             	add    $0x1,%eax
 80106d1b:	83 c2 0c             	add    $0xc,%edx
 80106d1e:	83 f8 40             	cmp    $0x40,%eax
-80106d21:	0f 84 a9 00 00 00    	je     80106dd0 <shm_open+0xe0>
+80106d21:	0f 84 b1 00 00 00    	je     80106dd8 <shm_open+0xe8>
     if (shm_table.shm_pages[i].id == id) {
 80106d27:	3b 1a                	cmp    (%edx),%ebx
 80106d29:	75 ed                	jne    80106d18 <shm_open+0x28>
-      mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U);
-80106d2b:	8d 1c 40             	lea    (%eax,%eax,2),%ebx
-80106d2e:	c1 e3 02             	shl    $0x2,%ebx
-80106d31:	8b 83 f8 54 11 80    	mov    -0x7feeab08(%ebx),%eax
+      if (mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U) == -1) {
+80106d2b:	8d 34 40             	lea    (%eax,%eax,2),%esi
+80106d2e:	c1 e6 02             	shl    $0x2,%esi
+80106d31:	8b 86 f8 54 11 80    	mov    -0x7feeab08(%esi),%eax
 80106d37:	8d b8 00 00 00 80    	lea    -0x80000000(%eax),%edi
 80106d3d:	e8 6e c9 ff ff       	call   801036b0 <myproc>
-80106d42:	8b 30                	mov    (%eax),%esi
+80106d42:	8b 18                	mov    (%eax),%ebx
 80106d44:	e8 67 c9 ff ff       	call   801036b0 <myproc>
 80106d49:	c7 44 24 10 06 00 00 	movl   $0x6,0x10(%esp)
 80106d50:	00 
 80106d51:	89 7c 24 0c          	mov    %edi,0xc(%esp)
-80106d55:	81 c6 ff 0f 00 00    	add    $0xfff,%esi
-80106d5b:	81 e6 00 f0 ff ff    	and    $0xfffff000,%esi
+80106d55:	81 c3 ff 0f 00 00    	add    $0xfff,%ebx
+80106d5b:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
 80106d61:	c7 44 24 08 00 10 00 	movl   $0x1000,0x8(%esp)
 80106d68:	00 
-80106d69:	89 74 24 04          	mov    %esi,0x4(%esp)
+80106d69:	89 5c 24 04          	mov    %ebx,0x4(%esp)
 80106d6d:	8b 40 04             	mov    0x4(%eax),%eax
 80106d70:	89 04 24             	mov    %eax,(%esp)
 80106d73:	e8 d8 f7 ff ff       	call   80106550 <mappages>
+80106d78:	83 f8 ff             	cmp    $0xffffffff,%eax
+80106d7b:	74 3f                	je     80106dbc <shm_open+0xcc>
+        release(&(shm_table.lock));
+        return 0;
+      }
       shm_table.shm_pages[i].refcnt++;
-80106d78:	83 83 fc 54 11 80 01 	addl   $0x1,-0x7feeab04(%ebx)
-      shm_table.shm_pages[i].id = id;
-      shm_table.shm_pages[i].frame = kalloc();
-      shm_table.shm_pages[i].refcnt = 1;
+80106d7d:	83 86 fc 54 11 80 01 	addl   $0x1,-0x7feeab04(%esi)
       memset(shm_table.shm_pages[i].frame, 0, PGSIZE);
-      mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U);
+      if (mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U) == -1) {
+        release(&(shm_table.lock));
+        return 0;
+      }
       *pointer = (char *)PGROUNDUP(myproc()->sz);
-80106d7f:	e8 2c c9 ff ff       	call   801036b0 <myproc>
-80106d84:	8b 4d 0c             	mov    0xc(%ebp),%ecx
-80106d87:	8b 00                	mov    (%eax),%eax
-80106d89:	05 ff 0f 00 00       	add    $0xfff,%eax
-80106d8e:	25 00 f0 ff ff       	and    $0xfffff000,%eax
-80106d93:	89 01                	mov    %eax,(%ecx)
+80106d84:	e8 27 c9 ff ff       	call   801036b0 <myproc>
+80106d89:	8b 4d 0c             	mov    0xc(%ebp),%ecx
+80106d8c:	8b 00                	mov    (%eax),%eax
+80106d8e:	05 ff 0f 00 00       	add    $0xfff,%eax
+80106d93:	25 00 f0 ff ff       	and    $0xfffff000,%eax
+80106d98:	89 01                	mov    %eax,(%ecx)
       myproc()->sz = PGROUNDUP(myproc()->sz) + PGSIZE;
-80106d95:	e8 16 c9 ff ff       	call   801036b0 <myproc>
-80106d9a:	89 c3                	mov    %eax,%ebx
-80106d9c:	e8 0f c9 ff ff       	call   801036b0 <myproc>
-80106da1:	8b 10                	mov    (%eax),%edx
-80106da3:	81 c2 ff 0f 00 00    	add    $0xfff,%edx
-80106da9:	81 e2 00 f0 ff ff    	and    $0xfffff000,%edx
-80106daf:	81 c2 00 10 00 00    	add    $0x1000,%edx
-80106db5:	89 13                	mov    %edx,(%ebx)
+80106d9a:	e8 11 c9 ff ff       	call   801036b0 <myproc>
+80106d9f:	89 c3                	mov    %eax,%ebx
+80106da1:	e8 0a c9 ff ff       	call   801036b0 <myproc>
+80106da6:	8b 10                	mov    (%eax),%edx
+80106da8:	81 c2 ff 0f 00 00    	add    $0xfff,%edx
+80106dae:	81 e2 00 f0 ff ff    	and    $0xfffff000,%edx
+80106db4:	81 c2 00 10 00 00    	add    $0x1000,%edx
+80106dba:	89 13                	mov    %edx,(%ebx)
       release(&(shm_table.lock));
-80106db7:	c7 04 24 c0 54 11 80 	movl   $0x801154c0,(%esp)
-80106dbe:	e8 7d d4 ff ff       	call   80104240 <release>
+80106dbc:	c7 04 24 c0 54 11 80 	movl   $0x801154c0,(%esp)
+80106dc3:	e8 78 d4 ff ff       	call   80104240 <release>
     }
   }
 
   release(&(shm_table.lock));
   return 0; //added to remove compiler warning - you should decide what to return
 }
-80106dc3:	83 c4 2c             	add    $0x2c,%esp
-80106dc6:	31 c0                	xor    %eax,%eax
-80106dc8:	5b                   	pop    %ebx
-80106dc9:	5e                   	pop    %esi
-80106dca:	5f                   	pop    %edi
-80106dcb:	5d                   	pop    %ebp
-80106dcc:	c3                   	ret    
-80106dcd:	8d 76 00             	lea    0x0(%esi),%esi
+80106dc8:	83 c4 2c             	add    $0x2c,%esp
+80106dcb:	31 c0                	xor    %eax,%eax
+80106dcd:	5b                   	pop    %ebx
+80106dce:	5e                   	pop    %esi
+80106dcf:	5f                   	pop    %edi
+80106dd0:	5d                   	pop    %ebp
+80106dd1:	c3                   	ret    
+80106dd2:	8d b6 00 00 00 00    	lea    0x0(%esi),%esi
   for (i = 0; i < 64; i++) {
-80106dd0:	ba f4 54 11 80       	mov    $0x801154f4,%edx
-80106dd5:	30 c0                	xor    %al,%al
-80106dd7:	eb 16                	jmp    80106def <shm_open+0xff>
-80106dd9:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
+80106dd8:	ba f4 54 11 80       	mov    $0x801154f4,%edx
+80106ddd:	30 c0                	xor    %al,%al
+80106ddf:	eb 12                	jmp    80106df3 <shm_open+0x103>
+80106de1:	8d b4 26 00 00 00 00 	lea    0x0(%esi,%eiz,1),%esi
   for (i = 0; i < 64; i++) {
-80106de0:	83 c0 01             	add    $0x1,%eax
-80106de3:	83 c2 0c             	add    $0xc,%edx
-80106de6:	83 f8 40             	cmp    $0x40,%eax
-80106de9:	0f 84 8b 00 00 00    	je     80106e7a <shm_open+0x18a>
+80106de8:	83 c0 01             	add    $0x1,%eax
+80106deb:	83 c2 0c             	add    $0xc,%edx
+80106dee:	83 f8 40             	cmp    $0x40,%eax
+80106df1:	74 c9                	je     80106dbc <shm_open+0xcc>
     if (shm_table.shm_pages[i].id == 0) {
-80106def:	8b 0a                	mov    (%edx),%ecx
-80106df1:	85 c9                	test   %ecx,%ecx
-80106df3:	75 eb                	jne    80106de0 <shm_open+0xf0>
+80106df3:	8b 0a                	mov    (%edx),%ecx
+80106df5:	85 c9                	test   %ecx,%ecx
+80106df7:	75 ef                	jne    80106de8 <shm_open+0xf8>
       shm_table.shm_pages[i].id = id;
-80106df5:	8d 34 40             	lea    (%eax,%eax,2),%esi
-80106df8:	c1 e6 02             	shl    $0x2,%esi
-80106dfb:	89 9e f4 54 11 80    	mov    %ebx,-0x7feeab0c(%esi)
+80106df9:	8d 34 40             	lea    (%eax,%eax,2),%esi
+80106dfc:	c1 e6 02             	shl    $0x2,%esi
+80106dff:	89 9e f4 54 11 80    	mov    %ebx,-0x7feeab0c(%esi)
       shm_table.shm_pages[i].frame = kalloc();
-80106e01:	e8 aa b6 ff ff       	call   801024b0 <kalloc>
+80106e05:	e8 a6 b6 ff ff       	call   801024b0 <kalloc>
       memset(shm_table.shm_pages[i].frame, 0, PGSIZE);
-80106e06:	c7 44 24 08 00 10 00 	movl   $0x1000,0x8(%esp)
-80106e0d:	00 
-80106e0e:	c7 44 24 04 00 00 00 	movl   $0x0,0x4(%esp)
-80106e15:	00 
+80106e0a:	c7 44 24 08 00 10 00 	movl   $0x1000,0x8(%esp)
+80106e11:	00 
+80106e12:	c7 44 24 04 00 00 00 	movl   $0x0,0x4(%esp)
+80106e19:	00 
       shm_table.shm_pages[i].refcnt = 1;
-80106e16:	c7 86 fc 54 11 80 01 	movl   $0x1,-0x7feeab04(%esi)
-80106e1d:	00 00 00 
+80106e1a:	c7 86 fc 54 11 80 01 	movl   $0x1,-0x7feeab04(%esi)
+80106e21:	00 00 00 
       memset(shm_table.shm_pages[i].frame, 0, PGSIZE);
-80106e20:	89 04 24             	mov    %eax,(%esp)
+80106e24:	89 04 24             	mov    %eax,(%esp)
       shm_table.shm_pages[i].frame = kalloc();
-80106e23:	89 86 f8 54 11 80    	mov    %eax,-0x7feeab08(%esi)
+80106e27:	89 86 f8 54 11 80    	mov    %eax,-0x7feeab08(%esi)
       memset(shm_table.shm_pages[i].frame, 0, PGSIZE);
-80106e29:	e8 62 d4 ff ff       	call   80104290 <memset>
-      mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U);
-80106e2e:	8b b6 f8 54 11 80    	mov    -0x7feeab08(%esi),%esi
-80106e34:	e8 77 c8 ff ff       	call   801036b0 <myproc>
-80106e39:	81 c6 00 00 00 80    	add    $0x80000000,%esi
-80106e3f:	8b 18                	mov    (%eax),%ebx
-80106e41:	e8 6a c8 ff ff       	call   801036b0 <myproc>
-80106e46:	c7 44 24 10 06 00 00 	movl   $0x6,0x10(%esp)
-80106e4d:	00 
-80106e4e:	89 74 24 0c          	mov    %esi,0xc(%esp)
-80106e52:	81 c3 ff 0f 00 00    	add    $0xfff,%ebx
-80106e58:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
-80106e5e:	c7 44 24 08 00 10 00 	movl   $0x1000,0x8(%esp)
-80106e65:	00 
-80106e66:	89 5c 24 04          	mov    %ebx,0x4(%esp)
-80106e6a:	8b 40 04             	mov    0x4(%eax),%eax
-80106e6d:	89 04 24             	mov    %eax,(%esp)
-80106e70:	e8 db f6 ff ff       	call   80106550 <mappages>
-80106e75:	e9 05 ff ff ff       	jmp    80106d7f <shm_open+0x8f>
-  release(&(shm_table.lock));
-80106e7a:	c7 04 24 c0 54 11 80 	movl   $0x801154c0,(%esp)
-80106e81:	e8 ba d3 ff ff       	call   80104240 <release>
-  return 0; //added to remove compiler warning - you should decide what to return
-80106e86:	e9 38 ff ff ff       	jmp    80106dc3 <shm_open+0xd3>
-80106e8b:	90                   	nop
-80106e8c:	8d 74 26 00          	lea    0x0(%esi,%eiz,1),%esi
+80106e2d:	e8 5e d4 ff ff       	call   80104290 <memset>
+      if (mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U) == -1) {
+80106e32:	8b b6 f8 54 11 80    	mov    -0x7feeab08(%esi),%esi
+80106e38:	e8 73 c8 ff ff       	call   801036b0 <myproc>
+80106e3d:	81 c6 00 00 00 80    	add    $0x80000000,%esi
+80106e43:	8b 18                	mov    (%eax),%ebx
+80106e45:	e8 66 c8 ff ff       	call   801036b0 <myproc>
+80106e4a:	c7 44 24 10 06 00 00 	movl   $0x6,0x10(%esp)
+80106e51:	00 
+80106e52:	89 74 24 0c          	mov    %esi,0xc(%esp)
+80106e56:	81 c3 ff 0f 00 00    	add    $0xfff,%ebx
+80106e5c:	81 e3 00 f0 ff ff    	and    $0xfffff000,%ebx
+80106e62:	c7 44 24 08 00 10 00 	movl   $0x1000,0x8(%esp)
+80106e69:	00 
+80106e6a:	89 5c 24 04          	mov    %ebx,0x4(%esp)
+80106e6e:	8b 40 04             	mov    0x4(%eax),%eax
+80106e71:	89 04 24             	mov    %eax,(%esp)
+80106e74:	e8 d7 f6 ff ff       	call   80106550 <mappages>
+80106e79:	83 f8 ff             	cmp    $0xffffffff,%eax
+80106e7c:	0f 85 02 ff ff ff    	jne    80106d84 <shm_open+0x94>
+80106e82:	e9 35 ff ff ff       	jmp    80106dbc <shm_open+0xcc>
+80106e87:	89 f6                	mov    %esi,%esi
+80106e89:	8d bc 27 00 00 00 00 	lea    0x0(%edi,%eiz,1),%edi
 
 80106e90 <shm_close>:
 
